@@ -46,8 +46,10 @@ class BaseParser(object):
         html = await fetch(url, spider, session, semaphore)
 
         if html is None:
-            spider.error_urls.append(url)
-            self.pre_parse_urls.put_nowait(url)
+            if url not in spider.error_urls:
+                spider.error_urls.append(url)
+                self.parsing_urls.remove(url)  # re-enqueue
+                self.pre_parse_urls.put_nowait(url)
             return None
 
         if url in spider.error_urls:
